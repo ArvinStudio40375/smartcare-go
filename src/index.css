@@ -1,42 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* SmartCare Design System - Mobile-First Healthcare Service App */
 
 @layer base {
   :root {
+    /* Core Brand Colors - Soft Blue & Clean White */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* SmartCare Blue Primary */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 217 91% 70%;
+    --primary-dark: 217 91% 50%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Success Green */
+    --secondary: 159 84% 39%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Neutral Grays */
+    --muted: 215 20% 97%;
+    --muted-foreground: 215 15% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 215 20% 97%;
+    --accent-foreground: 215 25% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 215 25% 15%;
 
-    --radius: 0.5rem;
+    --success: 159 84% 39%;
+    --success-foreground: 0 0% 100%;
+
+    /* Surface & Interactive */
+    --border: 215 20% 92%;
+    --input: 215 20% 97%;
+    --ring: 217 91% 60%;
+
+    /* Design System Enhancements */
+    --radius: 0.75rem;
+    --radius-sm: 0.5rem;
+    --radius-lg: 1rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(188 86% 53%));
+    --gradient-secondary: linear-gradient(135deg, hsl(159 84% 39%), hsl(159 84% 49%));
+    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%), hsl(215 20% 98%));
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px hsl(217 91% 60% / 0.08);
+    --shadow-medium: 0 4px 12px hsl(217 91% 60% / 0.12);
+    --shadow-large: 0 8px 24px hsl(217 91% 60% / 0.16);
+    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Mobile Spacing */
+    --spacing-safe-top: env(safe-area-inset-top);
+    --spacing-safe-bottom: env(safe-area-inset-bottom);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +135,139 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* Mobile-First Components */
+  .mobile-container {
+    @apply max-w-sm mx-auto min-h-screen bg-background relative;
+  }
+
+  .mobile-header {
+    @apply sticky top-0 z-50 px-4 py-3 bg-white/80 backdrop-blur-lg border-b border-border;
+  }
+
+  .mobile-content {
+    @apply px-4 py-6 pb-20;
+  }
+
+  .mobile-bottom-nav {
+    @apply fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-white border-t border-border z-50;
+  }
+
+  /* Card Variants */
+  .card-primary {
+    @apply bg-white rounded-lg border border-border shadow-lg;
+  }
+
+  .card-gradient {
+    @apply rounded-lg;
+    background: var(--gradient-primary);
+  }
+
+  .card-surface {
+    @apply bg-white rounded-lg border border-border;
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* Button Variants */
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg text-white font-medium;
+    background: var(--gradient-primary);
+    transition: var(--transition-smooth);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-medium);
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg bg-secondary text-secondary-foreground font-medium;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 rounded-lg text-muted-foreground font-medium bg-transparent;
+    transition: var(--transition-smooth);
+  }
+
+  .btn-ghost:hover {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  /* Input Styles */
+  .input-primary {
+    @apply w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder:text-muted-foreground;
+    transition: var(--transition-smooth);
+  }
+
+  .input-primary:focus {
+    @apply outline-none ring-2 ring-primary border-primary;
+  }
+
+  /* Status Badges */
+  .status-pending {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning;
+  }
+
+  .status-progress {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary;
+  }
+
+  .status-completed {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success;
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
