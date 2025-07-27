@@ -26,10 +26,11 @@ interface User {
 
 interface Order {
   id: string;
-  nama_layanan: string;
+  deskripsi: string;
   status: string;
-  tanggal: string;
-  alamat_layanan: string;
+  waktu_pesan: string;
+  alamat: string;
+  tarif: number;
 }
 
 const Dashboard: React.FC = () => {
@@ -52,7 +53,7 @@ const Dashboard: React.FC = () => {
   const loadRecentOrders = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('pesanan_smartcare')
+        .from('pesanan')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -77,11 +78,13 @@ const Dashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Menunggu':
+      case 'menunggu':
         return <Badge className="status-pending">Menunggu</Badge>;
-      case 'Diproses':
+      case 'diterima':
+        return <Badge className="status-progress">Diterima</Badge>;
+      case 'diproses':
         return <Badge className="status-progress">Diproses</Badge>;
-      case 'Selesai':
+      case 'selesai':
         return <Badge className="status-completed">Selesai</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -170,17 +173,17 @@ const Dashboard: React.FC = () => {
               <Card key={order.id} className="card-surface">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium">{order.nama_layanan}</h4>
+                    <h4 className="font-medium">{order.deskripsi.split(' - ')[0] || order.deskripsi}</h4>
                     {getStatusBadge(order.status)}
                   </div>
                   <div className="flex items-center text-sm text-muted-foreground space-x-4">
                     <div className="flex items-center space-x-1">
                       <Clock className="h-3 w-3" />
-                      <span>{formatDate(order.tanggal)}</span>
+                      <span>{formatDate(order.waktu_pesan)}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-3 w-3" />
-                      <span className="truncate">{order.alamat_layanan}</span>
+                      <span className="truncate">{order.alamat}</span>
                     </div>
                   </div>
                 </CardContent>

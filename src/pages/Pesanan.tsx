@@ -26,13 +26,11 @@ const Pesanan: React.FC = () => {
   
   const [user, setUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
-    nama_layanan: '',
-    alamat_layanan: '',
-    catatan: '',
-    total_harga: '',
-    metode_pembayaran: 'Cash',
-    tanggal: ''
+    deskripsi: '', // layanan + deskripsi digabung 
+    alamat: '',
+    tarif: '' // harga dalam string untuk input
   });
+  const [metodePembayaran, setMetodePembayaran] = useState<'cash' | 'saldo'>('cash');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -46,7 +44,7 @@ const Pesanan: React.FC = () => {
       // Pre-fill alamat with user's address
       setFormData(prev => ({
         ...prev,
-        alamat_layanan: parsedUser.alamat
+        alamat: parsedUser.alamat
       }));
     } else {
       navigate('/auth');
@@ -57,33 +55,15 @@ const Pesanan: React.FC = () => {
     if (selectedService) {
       setFormData(prev => ({
         ...prev,
-        nama_layanan: selectedService
+        deskripsi: selectedService + " - "
       }));
     }
-
-    // Set default tanggal to today
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const formattedDate = tomorrow.toISOString().slice(0, 16);
-    setFormData(prev => ({
-      ...prev,
-      tanggal: formattedDate
-    }));
   }, [navigate, location]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
-    }));
-    setError('');
-  };
-
-  const handlePaymentMethodChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      metode_pembayaran: value
     }));
     setError('');
   };
@@ -95,32 +75,31 @@ const Pesanan: React.FC = () => {
 
     try {
       // Validation
-      if (!formData.nama_layanan || !formData.alamat_layanan || !formData.total_harga || !formData.tanggal) {
+      if (!formData.deskripsi || !formData.alamat || !formData.tarif) {
         throw new Error('Semua field yang diperlukan harus diisi');
       }
 
-      const totalHarga = parseInt(formData.total_harga);
-      if (isNaN(totalHarga) || totalHarga <= 0) {
-        throw new Error('Total harga harus berupa angka yang valid');
+      const tarif = parseInt(formData.tarif);
+      if (isNaN(tarif) || tarif <= 0) {
+        throw new Error('Tarif harus berupa angka yang valid');
       }
 
       // Check balance if using saldo
-      if (formData.metode_pembayaran === 'Saldo' && user && user.saldo < totalHarga) {
+      if (metodePembayaran === 'saldo' && user && user.saldo < tarif) {
         throw new Error('Saldo tidak mencukupi. Silakan top up terlebih dahulu.');
       }
 
-      // Insert pesanan
+      // Insert pesanan ke tabel pesanan sesuai struktur database
       const { error } = await supabase
-        .from('pesanan_smartcare')
+        .from('pesanan')
         .insert([{
           user_id: user?.id,
-          nama_layanan: formData.nama_layanan,
-          alamat_layanan: formData.alamat_layanan,
-          catatan: formData.catatan || null,
-          total_harga: totalHarga,
-          metode_pembayaran: formData.metode_pembayaran,
-          tanggal: formData.tanggal,
-          status: 'Menunggu'
+          deskripsi: formData.deskripsi,
+          alamat: formData.alamat,
+          tarif: tarif,
+          status: 'menunggu'
+          // mitra_id akan diisi nanti ketika mitra menerima pesanan
+          // waktu_mulai dan waktu_selesai akan diisi nanti
         }]);
 
       if (error) throw error;
@@ -174,42 +153,27 @@ const Pesanan: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nama_layanan">Nama Layanan *</Label>
-              <Input
-                id="nama_layanan"
-                name="nama_layanan"
-                type="text"
-                placeholder="Contoh: Pemeriksaan Umum, Suntik Vitamin"
-                value={formData.nama_layanan}
+              <Label htmlFor="deskripsi">Deskripsi Layanan *</Label>
+              <Textarea
+                id="deskripsi"
+                name="deskripsi"
+                placeholder="Contoh: Pemeriksaan Umum - Cek kesehatan rutin, tekanan darah, dll"
+                value={formData.deskripsi}
                 onChange={handleInputChange}
-                className="input-primary"
+                className="min-h-[100px]"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tanggal">Tanggal & Waktu Layanan *</Label>
-              <Input
-                id="tanggal"
-                name="tanggal"
-                type="datetime-local"
-                value={formData.tanggal}
-                onChange={handleInputChange}
-                className="input-primary"
-                required
-                min={new Date().toISOString().slice(0, 16)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alamat_layanan">Alamat Layanan *</Label>
+              <Label htmlFor="alamat">Alamat Layanan *</Label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Textarea
-                  id="alamat_layanan"
-                  name="alamat_layanan"
+                  id="alamat"
+                  name="alamat"
                   placeholder="Masukkan alamat lengkap tempat layanan"
-                  value={formData.alamat_layanan}
+                  value={formData.alamat}
                   onChange={handleInputChange}
                   className="pl-10 min-h-[80px]"
                   required
@@ -218,25 +182,13 @@ const Pesanan: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="catatan">Catatan Tambahan</Label>
-              <Textarea
-                id="catatan"
-                name="catatan"
-                placeholder="Jelaskan keluhan atau kebutuhan khusus..."
-                value={formData.catatan}
-                onChange={handleInputChange}
-                className="min-h-[100px]"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="total_harga">Total Harga (Rp) *</Label>
+              <Label htmlFor="tarif">Tarif Layanan (Rp) *</Label>
               <Input
-                id="total_harga"
-                name="total_harga"
+                id="tarif"
+                name="tarif"
                 type="number"
                 placeholder="150000"
-                value={formData.total_harga}
+                value={formData.tarif}
                 onChange={handleInputChange}
                 className="input-primary"
                 min="1"
@@ -253,12 +205,12 @@ const Pesanan: React.FC = () => {
           </CardHeader>
           <CardContent>
             <RadioGroup 
-              value={formData.metode_pembayaran} 
-              onValueChange={handlePaymentMethodChange}
+              value={metodePembayaran} 
+              onValueChange={(value) => setMetodePembayaran(value as 'cash' | 'saldo')}
               className="space-y-3"
             >
               <div className="flex items-center space-x-3 p-3 border border-border rounded-lg">
-                <RadioGroupItem value="Cash" id="cash" />
+                <RadioGroupItem value="cash" id="cash" />
                 <div className="flex items-center space-x-3 flex-1">
                   <Banknote className="h-5 w-5 text-green-600" />
                   <div>
@@ -269,7 +221,7 @@ const Pesanan: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-3 p-3 border border-border rounded-lg">
-                <RadioGroupItem value="Saldo" id="saldo" />
+                <RadioGroupItem value="saldo" id="saldo" />
                 <div className="flex items-center space-x-3 flex-1">
                   <CreditCard className="h-5 w-5 text-primary" />
                   <div className="flex-1">
@@ -283,11 +235,11 @@ const Pesanan: React.FC = () => {
             </RadioGroup>
 
             {/* Balance Warning */}
-            {formData.metode_pembayaran === 'Saldo' && formData.total_harga && 
-             parseInt(formData.total_harga) > user.saldo && (
+            {metodePembayaran === 'saldo' && formData.tarif && 
+             parseInt(formData.tarif) > user.saldo && (
               <Alert className="mt-4 border-warning bg-warning/5">
                 <AlertDescription className="text-warning">
-                  Saldo tidak mencukupi. Anda memerlukan {formatCurrency(parseInt(formData.total_harga) - user.saldo)} lagi.
+                  Saldo tidak mencukupi. Anda memerlukan {formatCurrency(parseInt(formData.tarif) - user.saldo)} lagi.
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-warning underline ml-1"
@@ -302,13 +254,13 @@ const Pesanan: React.FC = () => {
         </Card>
 
         {/* Summary */}
-        {formData.total_harga && (
+        {formData.tarif && (
           <Card className="card-surface bg-muted/30">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <span className="font-medium">Total Pembayaran:</span>
                 <span className="text-lg font-bold text-primary">
-                  {formatCurrency(parseInt(formData.total_harga) || 0)}
+                  {formatCurrency(parseInt(formData.tarif) || 0)}
                 </span>
               </div>
             </CardContent>
@@ -326,7 +278,7 @@ const Pesanan: React.FC = () => {
           <Button 
             type="submit" 
             className="w-full btn-primary"
-            disabled={loading || (formData.metode_pembayaran === 'Saldo' && formData.total_harga && parseInt(formData.total_harga) > user.saldo)}
+            disabled={loading || (metodePembayaran === 'saldo' && formData.tarif && parseInt(formData.tarif) > user.saldo)}
           >
             {loading ? (
               <>

@@ -18,13 +18,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Order {
   id: string;
-  nama_layanan: string;
-  alamat_layanan: string;
-  catatan: string;
-  total_harga: number;
-  metode_pembayaran: string;
+  deskripsi: string;
+  alamat: string;
+  tarif: number;
   status: string;
-  tanggal: string;
+  waktu_pesan: string;
+  waktu_mulai?: string;
+  waktu_selesai?: string;
   created_at: string;
   mitra_id?: string;
 }
@@ -40,7 +40,7 @@ const Riwayat: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'Menunggu' | 'Diproses' | 'Selesai'>('all');
+  const [filter, setFilter] = useState<'all' | 'menunggu' | 'diterima' | 'diproses' | 'selesai'>('all');
 
   useEffect(() => {
     // Load user data
@@ -57,7 +57,7 @@ const Riwayat: React.FC = () => {
   const loadOrders = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('pesanan_smartcare')
+        .from('pesanan')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -77,11 +77,13 @@ const Riwayat: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'Menunggu':
+      case 'menunggu':
         return <Badge className="status-pending">Menunggu</Badge>;
-      case 'Diproses':
+      case 'diterima':
+        return <Badge className="status-progress">Diterima</Badge>;
+      case 'diproses':
         return <Badge className="status-progress">Diproses</Badge>;
-      case 'Selesai':
+      case 'selesai':
         return <Badge className="status-completed">Selesai</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -119,9 +121,10 @@ const Riwayat: React.FC = () => {
 
   const filters = [
     { key: 'all', label: 'Semua', count: orders.length },
-    { key: 'Menunggu', label: 'Menunggu', count: orders.filter(o => o.status === 'Menunggu').length },
-    { key: 'Diproses', label: 'Diproses', count: orders.filter(o => o.status === 'Diproses').length },
-    { key: 'Selesai', label: 'Selesai', count: orders.filter(o => o.status === 'Selesai').length },
+    { key: 'menunggu', label: 'Menunggu', count: orders.filter(o => o.status === 'menunggu').length },
+    { key: 'diterima', label: 'Diterima', count: orders.filter(o => o.status === 'diterima').length },
+    { key: 'diproses', label: 'Diproses', count: orders.filter(o => o.status === 'diproses').length },
+    { key: 'selesai', label: 'Selesai', count: orders.filter(o => o.status === 'selesai').length },
   ];
 
   if (!user) {
@@ -175,10 +178,10 @@ const Riwayat: React.FC = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground mb-1">
-                      {order.nama_layanan}
+                      {order.deskripsi.split(' - ')[0] || order.deskripsi}
                     </h3>
                     <p className="text-lg font-bold text-primary">
-                      {formatCurrency(order.total_harga)}
+                      {formatCurrency(order.tarif)}
                     </p>
                   </div>
                   {getStatusBadge(order.status)}
@@ -188,15 +191,11 @@ const Riwayat: React.FC = () => {
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-3 w-3" />
-                    <span>{formatShortDate(order.tanggal)}</span>
+                    <span>{formatShortDate(order.waktu_pesan)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-3 w-3" />
-                    <span className="truncate">{order.alamat_layanan}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CreditCard className="h-3 w-3" />
-                    <span>{order.metode_pembayaran}</span>
+                    <span className="truncate">{order.alamat}</span>
                   </div>
                 </div>
 
@@ -255,15 +254,13 @@ const Riwayat: React.FC = () => {
 
               {/* Service Info */}
               <div className="bg-muted/30 rounded-lg p-4">
-                <h3 className="font-semibold text-lg mb-2">{selectedOrder.nama_layanan}</h3>
+                <h3 className="font-semibold text-lg mb-2">
+                  {selectedOrder.deskripsi.split(' - ')[0] || selectedOrder.deskripsi}
+                </h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Harga:</span>
-                    <span className="font-semibold">{formatCurrency(selectedOrder.total_harga)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Metode Bayar:</span>
-                    <span>{selectedOrder.metode_pembayaran}</span>
+                    <span className="text-muted-foreground">Tarif:</span>
+                    <span className="font-semibold">{formatCurrency(selectedOrder.tarif)}</span>
                   </div>
                 </div>
               </div>
@@ -272,10 +269,10 @@ const Riwayat: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <div className="flex items-center space-x-2 text-muted-foreground mb-1">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-sm">Jadwal Layanan</span>
+                    <Activity className="h-4 w-4" />
+                    <span className="text-sm">Deskripsi Lengkap</span>
                   </div>
-                  <p className="text-sm font-medium">{formatDate(selectedOrder.tanggal)}</p>
+                  <p className="text-sm">{selectedOrder.deskripsi}</p>
                 </div>
 
                 <div>
@@ -283,18 +280,8 @@ const Riwayat: React.FC = () => {
                     <MapPin className="h-4 w-4" />
                     <span className="text-sm">Alamat Layanan</span>
                   </div>
-                  <p className="text-sm">{selectedOrder.alamat_layanan}</p>
+                  <p className="text-sm">{selectedOrder.alamat}</p>
                 </div>
-
-                {selectedOrder.catatan && (
-                  <div>
-                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
-                      <Activity className="h-4 w-4" />
-                      <span className="text-sm">Catatan</span>
-                    </div>
-                    <p className="text-sm">{selectedOrder.catatan}</p>
-                  </div>
-                )}
 
                 <div>
                   <div className="flex items-center space-x-2 text-muted-foreground mb-1">
@@ -303,18 +290,49 @@ const Riwayat: React.FC = () => {
                   </div>
                   <p className="text-sm">{formatDate(selectedOrder.created_at)}</p>
                 </div>
+
+                {selectedOrder.waktu_mulai && (
+                  <div>
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm">Waktu Mulai</span>
+                    </div>
+                    <p className="text-sm">{formatDate(selectedOrder.waktu_mulai)}</p>
+                  </div>
+                )}
+
+                {selectedOrder.waktu_selesai && (
+                  <div>
+                    <div className="flex items-center space-x-2 text-muted-foreground mb-1">
+                      <Calendar className="h-4 w-4" />
+                      <span className="text-sm">Waktu Selesai</span>
+                    </div>
+                    <p className="text-sm">{formatDate(selectedOrder.waktu_selesai)}</p>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
               <div className="space-y-2 pt-4">
-                {selectedOrder.status === 'Menunggu' && (
+                {selectedOrder.status === 'menunggu' && (
                   <Button variant="outline" className="w-full" size="sm">
                     Hubungi Customer Service
                   </Button>
                 )}
                 
-                {selectedOrder.status === 'Selesai' && (
-                  <Button className="w-full btn-primary" size="sm">
+                {selectedOrder.status === 'selesai' && (
+                  <Button 
+                    className="w-full btn-primary" 
+                    size="sm"
+                    onClick={() => {
+                      navigate('/pesanan', { 
+                        state: { 
+                          selectedService: selectedOrder.deskripsi.split(' - ')[0] 
+                        } 
+                      });
+                      setSelectedOrder(null);
+                    }}
+                  >
                     Pesan Lagi
                   </Button>
                 )}
